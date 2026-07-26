@@ -569,50 +569,52 @@ app.get('/api/certificate/:token', async (req: Request, res: Response): Promise<
       return;
     }
 
-    const drive = google.drive({ version: 'v3', auth: getDriveAuth() });
-
     if (req.query.download === 'true') {
-      // ── DOWNLOAD mode: stream raw bytes with attachment disposition ──
-      const file = await drive.files.get(
-        { fileId: cert.fileId, alt: 'media' },
-        { responseType: 'stream' }
-      );
-      const contentType = (file.headers['content-type'] as string) || 'application/octet-stream';
-      const isPDF = contentType.includes('pdf');
-      const ext = isPDF ? 'pdf' : 'jpeg';
-      res.setHeader('Content-Type', contentType);
-      res.setHeader('Content-Disposition', `attachment; filename="PAB_Certificate.${ext}"`);
-      (file.data as NodeJS.ReadableStream).pipe(res);
-      return;
+      try {
+        const drive = google.drive({ version: 'v3', auth: getDriveAuth() });
+        const file = await drive.files.get(
+          { fileId: cert.fileId, alt: 'media' },
+          { responseType: 'stream' }
+        );
+        const contentType = (file.headers['content-type'] as string) || 'application/octet-stream';
+        const isPDF = contentType.includes('pdf');
+        const ext = isPDF ? 'pdf' : 'jpeg';
+        res.setHeader('Content-Type', contentType);
+        res.setHeader('Content-Disposition', `attachment; filename="PAB_Certificate.${ext}"`);
+        (file.data as NodeJS.ReadableStream).pipe(res);
+        return;
+      } catch (err) {
+        res.redirect(`https://drive.google.com/uc?export=download&id=${cert.fileId}`);
+        return;
+      }
     }
 
-    // ── PREVIEW mode: fetch metadata first to know the MIME type ──
-    const meta = await drive.files.get({
-      fileId: cert.fileId,
-      fields: 'mimeType, name',
-    });
-    const mimeType = meta.data.mimeType || 'image/jpeg';
-    const isPDF = mimeType.includes('pdf');
+    try {
+      const drive = google.drive({ version: 'v3', auth: getDriveAuth() });
+      const meta = await drive.files.get({
+        fileId: cert.fileId,
+        fields: 'mimeType, name',
+      });
+      const mimeType = meta.data.mimeType || 'image/jpeg';
+      const isPDF = mimeType.includes('pdf');
 
-    if (isPDF) {
-      // Stream the PDF directly — browsers render inline PDFs natively
-      const file = await drive.files.get(
-        { fileId: cert.fileId, alt: 'media' },
-        { responseType: 'stream' }
-      );
-      res.setHeader('Content-Type', 'application/pdf');
-      res.setHeader('Content-Disposition', 'inline; filename="PAB_Certificate.pdf"');
-      (file.data as NodeJS.ReadableStream).pipe(res);
-    } else {
-      // For images (JPEG/PNG): fetch as buffer, base64-encode, wrap in HTML
-      // so the <iframe> renders a whole page (not a broken MIME resource)
-      const file = await drive.files.get(
-        { fileId: cert.fileId, alt: 'media' },
-        { responseType: 'arraybuffer' }
-      );
-      const imgData = Buffer.from(file.data as ArrayBuffer).toString('base64');
-      const imgMime = mimeType.includes('png') ? 'image/png' : 'image/jpeg';
-      const html = `<!DOCTYPE html>
+      if (isPDF) {
+        const file = await drive.files.get(
+          { fileId: cert.fileId, alt: 'media' },
+          { responseType: 'stream' }
+        );
+        res.setHeader('Content-Type', 'application/pdf');
+        res.setHeader('Content-Disposition', 'inline; filename="PAB_Certificate.pdf"');
+        (file.data as NodeJS.ReadableStream).pipe(res);
+        return;
+      } else {
+        const file = await drive.files.get(
+          { fileId: cert.fileId, alt: 'media' },
+          { responseType: 'arraybuffer' }
+        );
+        const imgData = Buffer.from(file.data as ArrayBuffer).toString('base64');
+        const imgMime = mimeType.includes('png') ? 'image/png' : 'image/jpeg';
+        const html = `<!DOCTYPE html>
 <html><head><meta charset="utf-8">
 <style>
   * { margin:0; padding:0; box-sizing:border-box; }
@@ -621,8 +623,13 @@ app.get('/api/certificate/:token', async (req: Request, res: Response): Promise<
 </style></head>
 <body><img src="data:${imgMime};base64,${imgData}" alt="PAB Internship Certificate" /></body>
 </html>`;
-      res.setHeader('Content-Type', 'text/html; charset=utf-8');
-      res.send(html);
+        res.setHeader('Content-Type', 'text/html; charset=utf-8');
+        res.send(html);
+        return;
+      }
+    } catch (err) {
+      res.redirect(`https://drive.google.com/file/d/${cert.fileId}/preview`);
+      return;
     }
   } catch (error: any) {
     console.error('[Drive Stream Error]', error?.message || error);

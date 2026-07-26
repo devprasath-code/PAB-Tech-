@@ -913,9 +913,7 @@ export default function Internship() {
                       <div className="absolute -inset-1 bg-gradient-to-r from-brand-cyan/30 to-brand-purple/30 rounded-3xl blur opacity-25 group-hover:opacity-50 transition duration-1000 group-hover:duration-200" />
                       <div className="relative bg-neutral-900 ring-1 ring-white/10 rounded-2xl p-2 sm:p-4 min-h-[360px] flex flex-col justify-center items-center overflow-hidden">
                         {(() => {
-                          const previewUrlToUse = retrievedCert.certToken
-                            ? `${API_BASE_URL}/api/certificate/${retrievedCert.certToken}`
-                            : retrievedCert.previewUrl;
+                          const previewUrlToUse = retrievedCert.previewUrl || (retrievedCert.driveFileId ? `https://drive.google.com/file/d/${retrievedCert.driveFileId}/preview` : null);
 
                           return previewUrlToUse ? (
                             <>
@@ -968,9 +966,9 @@ export default function Internship() {
                         Verify Another Certificate
                       </button>
                       <div className="flex flex-col sm:flex-row gap-2.5 w-full sm:w-auto">
-                        {retrievedCert.certToken && (
+                        {retrievedCert.driveFileId && (
                           <a
-                            href={`${API_BASE_URL}/api/certificate/${retrievedCert.certToken}?download=true`}
+                            href={`https://drive.google.com/uc?export=download&id=${retrievedCert.driveFileId}`}
                             target="_blank"
                             rel="noopener noreferrer"
                             className="w-full sm:w-auto px-5 py-3 rounded-xl text-xs font-semibold text-neutral-950 bg-white hover:bg-neutral-100 transition-all flex items-center justify-center gap-2"
