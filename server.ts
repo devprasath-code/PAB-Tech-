@@ -39,7 +39,7 @@ setInterval(() => {
 }, 5 * 60 * 1000);
 
 // --- CONFIGURATION & ENV VARIABLES ---
-const PORT = process.env.PORT || 4000;
+const PORT = Number(process.env.PORT) || 4000;
 const DB_ENCRYPTION_SECRET = process.env.DB_ENCRYPTION_KEY || (process.env.NODE_ENV !== 'production' ? 'default-secret-database-key-for-pab-interns' : '');
 const HMAC_SECRET_KEY = process.env.HMAC_SECRET_KEY || (process.env.NODE_ENV !== 'production' ? 'default-secure-hmac-secret-key-for-pab-interns' : '');
 
@@ -512,9 +512,15 @@ app.post('/api/verify', verificationRateLimiter, async (req: Request, res: Respo
   }
 });
 
-// Health check endpoint
+// Health check endpoint (public — used by Render & monitoring tools)
 app.get('/api/health', (req: Request, res: Response) => {
-  res.status(200).json({ status: 'OK', message: 'Server is running' });
+  res.status(200).json({
+    status: 'ok',
+    service: 'PAB Backend',
+    uptime: process.uptime(),
+    timestamp: new Date().toISOString(),
+    environment: process.env.NODE_ENV || 'development'
+  });
 });
 
 // --- DEBUG ENDPOINT (Development Only) ---
@@ -780,7 +786,7 @@ Received: ${new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' })} IS
   }
 
   app.listen(PORT, '0.0.0.0', () => {
-    console.log(`[Server] listening on http://localhost:${PORT}`);
+    console.log(`🚀 PAB Backend running on port ${PORT}`);
   });
 }
 
