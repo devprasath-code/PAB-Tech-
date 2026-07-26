@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Mail, Phone, Clock, Send, Check, AlertCircle } from 'lucide-react';
+import { API_BASE_URL } from '../config/api';
 
 export default function Contact() {
   const [formData, setFormData] = useState({
@@ -21,7 +22,7 @@ export default function Contact() {
     setErrorMsg('');
 
     try {
-      const res = await fetch('/api/contact', {
+      const res = await fetch(`${API_BASE_URL}/api/contact`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formData),

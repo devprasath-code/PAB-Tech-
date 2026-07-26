@@ -1,5 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
+import { API_BASE_URL } from '../config/api';
 import { 
   Briefcase, 
   UploadCloud, 
@@ -203,7 +204,7 @@ export default function Internship() {
         }
       };
 
-      const res = await fetch('/api/internship-apply', {
+      const res = await fetch(`${API_BASE_URL}/api/internship-apply`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
@@ -281,7 +282,7 @@ export default function Internship() {
     setEnteredHashKeyBlock('');
 
     try {
-      const response = await fetch('/api/request-challenge', {
+      const response = await fetch(`${API_BASE_URL}/api/request-challenge`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ internId: internIdInput.trim() })
@@ -322,7 +323,7 @@ export default function Internship() {
     setCertError('');
 
     try {
-      const response = await fetch('/api/verify', {
+      const response = await fetch(`${API_BASE_URL}/api/verify`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -728,229 +729,232 @@ export default function Internship() {
 
         {/* TAB 2: Retrieve E-Certificate */}
         {activeTab === 'certificate' && (
-          <div className="space-y-12">
-            
-            {/* Input form terminal */}
-            <div className="max-w-2xl mx-auto bg-neutral-900/40 p-6 sm:p-8 rounded-2xl border border-white/5 backdrop-blur-sm text-left relative overflow-hidden">
-              <div className="absolute top-0 right-0 w-32 h-32 bg-brand-cyan/5 rounded-full blur-3xl pointer-events-none" />
-              
-              <div className="mb-6 space-y-1">
-                <h3 className="text-lg font-display font-bold text-white flex items-center gap-2">
-                  <SearchCheck className="w-5 h-5 text-brand-cyan" />
-                  Alumni Authentication Gateway
-                </h3>
-                <p className="text-xs text-neutral-400 font-light leading-relaxed">
-                  Secure multi-step internship verification gateway with cryptographically signed challenge authentication.
-                </p>
-              </div>
+          <div className="space-y-8">
+            {!retrievedCert ? (
+              /* Input form terminal */
+              <div className="max-w-2xl mx-auto bg-neutral-900/40 p-6 sm:p-8 rounded-2xl border border-white/5 backdrop-blur-sm text-left relative overflow-hidden">
+                <div className="absolute top-0 right-0 w-32 h-32 bg-brand-cyan/5 rounded-full blur-3xl pointer-events-none" />
+                
+                <div className="mb-6 space-y-1">
+                  <h3 className="text-lg font-display font-bold text-white flex items-center gap-2">
+                    <SearchCheck className="w-5 h-5 text-brand-cyan" />
+                    Alumni Authentication Gateway
+                  </h3>
+                  <p className="text-xs text-neutral-400 font-light leading-relaxed">
+                    Secure multi-step internship verification gateway with cryptographically signed challenge authentication.
+                  </p>
+                </div>
 
-              {verificationStep === 'enter-id' ? (
-                <form onSubmit={handleRequestChallenge} className="space-y-4">
-                  {/* PAB Intern ID */}
-                  <div className="space-y-1">
-                    <label className="text-[10px] font-mono font-semibold text-neutral-400 uppercase tracking-wide">PAB Intern ID</label>
-                    <div className="relative">
-                      <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-neutral-500" />
-                      <input
-                        type="text"
-                        placeholder="e.g. PAB-SI-26-001"
-                        value={internIdInput}
-                        onChange={(e) => setInternIdInput(e.target.value)}
-                        className="w-full pl-9 pr-4 py-2.5 text-xs rounded-xl bg-neutral-950 border border-white/5 text-neutral-200 focus:outline-none focus:border-brand-cyan/50 transition-all placeholder-neutral-700"
-                        required
-                      />
-                    </div>
-                  </div>
-
-                  {certError && (
-                    <div className="p-3 rounded-lg bg-red-500/10 border border-red-500/20 text-[11px] text-red-400 flex items-center gap-2">
-                      <AlertCircle className="w-3.5 h-3.5" />
-                      <span>{certError}</span>
-                    </div>
-                  )}
-
-                  <button
-                    type="submit"
-                    disabled={isRequestingChallenge}
-                    className="w-full py-2.5 rounded-xl text-xs font-bold text-neutral-950 bg-white hover:bg-neutral-100 disabled:opacity-50 transition-all text-center flex items-center justify-center gap-1.5"
-                  >
-                    {isRequestingChallenge ? (
-                      <>
-                        <Clock className="w-3.5 h-3.5 animate-spin" />
-                        Verifying ID & Generating Challenge...
-                      </>
-                    ) : (
-                      <>
-                        Request Verification Challenge
-                        <ArrowRight className="w-3.5 h-3.5" />
-                      </>
-                    )}
-                  </button>
-                </form>
-              ) : (
-                <form onSubmit={handleVerifyChallenge} className="space-y-5">
-                  {/* Secure Challenge Code Banner */}
-                  <div className="p-5 rounded-2xl bg-neutral-950 border border-brand-cyan/20 flex flex-col items-center justify-center text-center relative overflow-hidden">
-                    <div className="absolute top-0 right-0 w-24 h-24 bg-brand-cyan/5 rounded-full blur-xl pointer-events-none" />
-                    <span className="text-[9px] font-mono font-semibold text-brand-cyan uppercase tracking-widest bg-brand-cyan/10 px-2 py-0.5 rounded border border-brand-cyan/25">
-                      SECURE CHALLENGE GENERATED
-                    </span>
-                    <div className="text-3xl sm:text-4xl font-mono font-extrabold tracking-[0.5em] pl-[0.5em] text-white my-3 select-all">
-                      {activeChallenge}
-                    </div>
-                    <p className="text-[10px] text-neutral-400 font-light max-w-sm">
-                      This secure 4-character code is stored in temporary server session cache. Enter it below to complete HMAC-SHA256 verification.
-                    </p>
-                  </div>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    {/* Code Input */}
+                {verificationStep === 'enter-id' ? (
+                  <form onSubmit={handleRequestChallenge} className="space-y-4">
+                    {/* PAB Intern ID */}
                     <div className="space-y-1">
-                      <label className="text-[10px] font-mono font-semibold text-neutral-400 uppercase tracking-wide">Enter Verification Code</label>
-                      <div className="relative">
-                        <ShieldCheck className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-neutral-500" />
-                        <input
-                          type="text"
-                          placeholder="e.g. 7A2F"
-                          maxLength={4}
-                          value={enteredChallenge}
-                          onChange={(e) => setEnteredChallenge(e.target.value.toUpperCase())}
-                          className="w-full pl-9 pr-4 py-2.5 text-xs rounded-xl bg-neutral-950 border border-white/5 text-neutral-200 focus:outline-none focus:border-brand-cyan/50 tracking-widest font-mono text-center uppercase"
-                          required
-                        />
-                      </div>
-                    </div>
-
-                    {/* Hash Key Block Input */}
-                    <div className="space-y-1">
-                      <label className="text-[10px] font-mono font-semibold text-neutral-400 uppercase tracking-wide">
-                        Enter 4-Digit Hash Key Block
-                      </label>
+                      <label className="text-[10px] font-mono font-semibold text-neutral-400 uppercase tracking-wide">PAB Intern ID</label>
                       <div className="relative">
                         <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-neutral-500" />
                         <input
                           type="text"
-                          placeholder="e.g. 9546"
-                          maxLength={4}
-                          value={enteredHashKeyBlock}
-                          onChange={(e) => setEnteredHashKeyBlock(e.target.value.toUpperCase())}
-                          className="w-full pl-9 pr-4 py-2.5 text-xs rounded-xl bg-neutral-950 border border-white/5 text-neutral-200 focus:outline-none focus:border-brand-cyan/50 tracking-widest font-mono text-center uppercase"
+                          placeholder="e.g. PAB-SI-26-001"
+                          value={internIdInput}
+                          onChange={(e) => setInternIdInput(e.target.value)}
+                          className="w-full pl-9 pr-4 py-2.5 text-xs rounded-xl bg-neutral-950 border border-white/5 text-neutral-200 focus:outline-none focus:border-brand-cyan/50 transition-all placeholder-neutral-700"
                           required
                         />
                       </div>
                     </div>
-                  </div>
 
-                  <div className="flex justify-between items-center text-[10px] text-neutral-500 font-mono pt-1">
-                    <span>Session expires in: <span className="text-brand-cyan font-semibold">{formatTimer(timerSeconds)}</span></span>
-                    <button 
-                      type="button" 
-                      onClick={() => {
-                        setVerificationStep('enter-id');
-                        setCertError('');
-                      }}
-                      className="text-neutral-400 hover:text-white transition-colors"
-                    >
-                      Change Intern ID
-                    </button>
-                  </div>
-
-                  {certError && (
-                    <div className="p-3 rounded-lg bg-red-500/10 border border-red-500/20 text-[11px] text-red-400 flex items-center gap-2">
-                      <AlertCircle className="w-3.5 h-3.5" />
-                      <span>{certError}</span>
-                    </div>
-                  )}
-
-                  <button
-                    type="submit"
-                    disabled={isVerifyingChallenge}
-                    className="w-full py-2.5 rounded-xl text-xs font-bold text-neutral-950 bg-white hover:bg-neutral-100 disabled:opacity-50 transition-all text-center flex items-center justify-center gap-1.5"
-                  >
-                    {isVerifyingChallenge ? (
-                      <>
-                        <Clock className="w-3.5 h-3.5 animate-spin" />
-                        Executing Cryptographic Signature Match...
-                      </>
-                    ) : (
-                      <>
-                        Verify Signature & Retrieve E-Certificate
-                        <ShieldCheck className="w-3.5 h-3.5" />
-                      </>
+                    {certError && (
+                      <div className="p-3 rounded-lg bg-red-500/10 border border-red-500/20 text-[11px] text-red-400 flex items-center gap-2">
+                        <AlertCircle className="w-3.5 h-3.5" />
+                        <span>{certError}</span>
+                      </div>
                     )}
-                  </button>
-                </form>
-              )}
 
+                    <button
+                      type="submit"
+                      disabled={isRequestingChallenge}
+                      className="w-full py-2.5 rounded-xl text-xs font-bold text-neutral-950 bg-white hover:bg-neutral-100 disabled:opacity-50 transition-all text-center flex items-center justify-center gap-1.5"
+                    >
+                      {isRequestingChallenge ? (
+                        <>
+                          <Clock className="w-3.5 h-3.5 animate-spin" />
+                          Verifying ID & Generating Challenge...
+                        </>
+                      ) : (
+                        <>
+                          Request Verification Challenge
+                          <ArrowRight className="w-3.5 h-3.5" />
+                        </>
+                      )}
+                    </button>
+                  </form>
+                ) : (
+                  <form onSubmit={handleVerifyChallenge} className="space-y-5">
+                    {/* Secure Challenge Code Banner */}
+                    <div className="p-5 rounded-2xl bg-neutral-950 border border-brand-cyan/20 flex flex-col items-center justify-center text-center relative overflow-hidden">
+                      <div className="absolute top-0 right-0 w-24 h-24 bg-brand-cyan/5 rounded-full blur-xl pointer-events-none" />
+                      <span className="text-[9px] font-mono font-semibold text-brand-cyan uppercase tracking-widest bg-brand-cyan/10 px-2 py-0.5 rounded border border-brand-cyan/25">
+                        SECURE CHALLENGE GENERATED
+                      </span>
+                      <div className="text-3xl sm:text-4xl font-mono font-extrabold tracking-[0.5em] pl-[0.5em] text-white my-3 select-all">
+                        {activeChallenge}
+                      </div>
+                      <p className="text-[10px] text-neutral-400 font-light max-w-sm">
+                        This secure 4-character code is stored in temporary server session cache. Enter it below to complete HMAC-SHA256 verification.
+                      </p>
+                    </div>
 
-            </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      {/* Code Input */}
+                      <div className="space-y-1">
+                        <label className="text-[10px] font-mono font-semibold text-neutral-400 uppercase tracking-wide">Enter Verification Code</label>
+                        <div className="relative">
+                          <ShieldCheck className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-neutral-500" />
+                          <input
+                            type="text"
+                            placeholder="e.g. 7A2F"
+                            maxLength={4}
+                            value={enteredChallenge}
+                            onChange={(e) => setEnteredChallenge(e.target.value.toUpperCase())}
+                            className="w-full pl-9 pr-4 py-2.5 text-xs rounded-xl bg-neutral-950 border border-white/5 text-neutral-200 focus:outline-none focus:border-brand-cyan/50 tracking-widest font-mono text-center uppercase"
+                            required
+                          />
+                        </div>
+                      </div>
 
-            {/* Certificate Display Screen */}
-            <AnimatePresence>
-              {retrievedCert && (
+                      {/* Hash Key Block Input */}
+                      <div className="space-y-1">
+                        <label className="text-[10px] font-mono font-semibold text-neutral-400 uppercase tracking-wide">
+                          Enter 4-Digit Hash Key Block
+                        </label>
+                        <div className="relative">
+                          <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-neutral-500" />
+                          <input
+                            type="text"
+                            placeholder="e.g. 9546"
+                            maxLength={4}
+                            value={enteredHashKeyBlock}
+                            onChange={(e) => setEnteredHashKeyBlock(e.target.value.toUpperCase())}
+                            className="w-full pl-9 pr-4 py-2.5 text-xs rounded-xl bg-neutral-950 border border-white/5 text-neutral-200 focus:outline-none focus:border-brand-cyan/50 tracking-widest font-mono text-center uppercase"
+                            required
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="flex justify-between items-center text-[10px] text-neutral-500 font-mono pt-1">
+                      <span>Session expires in: <span className="text-brand-cyan font-semibold">{formatTimer(timerSeconds)}</span></span>
+                      <button 
+                        type="button" 
+                        onClick={() => {
+                          setVerificationStep('enter-id');
+                          setCertError('');
+                        }}
+                        className="text-neutral-400 hover:text-white transition-colors"
+                      >
+                        Change Intern ID
+                      </button>
+                    </div>
+
+                    {certError && (
+                      <div className="p-3 rounded-lg bg-red-500/10 border border-red-500/20 text-[11px] text-red-400 flex items-center gap-2">
+                        <AlertCircle className="w-3.5 h-3.5" />
+                        <span>{certError}</span>
+                      </div>
+                    )}
+
+                    <button
+                      type="submit"
+                      disabled={isVerifyingChallenge}
+                      className="w-full py-2.5 rounded-xl text-xs font-bold text-neutral-950 bg-white hover:bg-neutral-100 disabled:opacity-50 transition-all text-center flex items-center justify-center gap-1.5"
+                    >
+                      {isVerifyingChallenge ? (
+                        <>
+                          <Clock className="w-3.5 h-3.5 animate-spin" />
+                          Executing Cryptographic Signature Match...
+                        </>
+                      ) : (
+                        <>
+                          Verify Signature & Retrieve E-Certificate
+                          <ShieldCheck className="w-3.5 h-3.5" />
+                        </>
+                      )}
+                    </button>
+                  </form>
+                )}
+              </div>
+            ) : (
+              /* Certificate Display Screen */
+              <AnimatePresence>
                 <motion.div
-                  initial={{ opacity: 0, y: 30 }}
+                  initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: 30 }}
-                  className="space-y-6"
+                  exit={{ opacity: 0, y: 20 }}
+                  className="max-w-4xl mx-auto space-y-6"
                 >
                   <div className="w-full space-y-6">
                     {/* Success Header */}
-                    <div className="p-6 rounded-2xl bg-neutral-900/60 border border-emerald-500/20 flex flex-col sm:flex-row items-center gap-4 text-center sm:text-left">
+                    <div className="p-5 sm:p-6 rounded-2xl bg-neutral-900/60 border border-emerald-500/20 flex flex-col sm:flex-row items-center gap-4 text-center sm:text-left">
                       <div className="w-12 h-12 rounded-full bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400 flex-shrink-0">
                         <Award className="w-6 h-6" />
                       </div>
                       <div>
-                        <h3 className="text-lg font-display font-bold text-white">
+                        <h3 className="text-base sm:text-lg font-display font-bold text-white">
                           Verification Successful
                         </h3>
                         <p className="text-xs text-neutral-400 mt-1">
-                          Hi <strong className="text-white">{retrievedCert.name}</strong>, your E-Certificate has been securely retrieved.
+                          Hi <strong className="text-white">{retrievedCert.name}</strong>, your E-Certificate has been verified & retrieved.
                         </p>
                       </div>
                     </div>
 
                     {/* Certificate Embed Preview */}
-                    <div className="relative group">
+                    <div className="relative group w-full">
                       <div className="absolute -inset-1 bg-gradient-to-r from-brand-cyan/30 to-brand-purple/30 rounded-3xl blur opacity-25 group-hover:opacity-50 transition duration-1000 group-hover:duration-200" />
-                      <div className="relative bg-neutral-900 ring-1 ring-white/10 rounded-2xl p-2 sm:p-4 min-h-[400px] flex flex-col justify-center items-center">
-                        {retrievedCert.driveFileId && retrievedCert.previewUrl ? (
-                          retrievedCert.previewUrl.includes(retrievedCert.driveFileId) ? (
+                      <div className="relative bg-neutral-900 ring-1 ring-white/10 rounded-2xl p-2 sm:p-4 min-h-[360px] flex flex-col justify-center items-center overflow-hidden">
+                        {(() => {
+                          const previewUrlToUse = retrievedCert.certToken
+                            ? `${API_BASE_URL}/api/certificate/${retrievedCert.certToken}`
+                            : retrievedCert.previewUrl;
+
+                          return previewUrlToUse ? (
                             <>
                               <div className="absolute inset-0 flex flex-col items-center justify-center bg-neutral-900/80 backdrop-blur-sm z-10 pointer-events-none transition-opacity duration-500 iframe-loader">
                                 <Clock className="w-8 h-8 text-brand-cyan animate-spin mb-3" />
-                                <p className="text-sm text-neutral-300 font-mono">Checking certificate...</p>
+                                <p className="text-xs sm:text-sm text-neutral-300 font-mono">Loading E-Certificate preview...</p>
                               </div>
                               <iframe
-                                src={retrievedCert.previewUrl}
-                                className="w-full min-h-[500px] sm:min-h-[600px] md:min-h-[700px] border-none rounded-xl bg-white/5 relative z-0"
+                                src={previewUrlToUse}
+                                className="w-full h-[360px] xs:h-[440px] sm:h-[580px] md:h-[680px] border-none rounded-xl bg-white/5 relative z-0"
                                 title={`E-Certificate — ${retrievedCert.name}`}
                                 allow="autoplay"
                                 onLoad={(e) => {
                                   const loader = e.currentTarget.parentElement?.querySelector('.iframe-loader');
                                   if (loader) loader.classList.add('opacity-0');
                                 }}
+                                ref={(el) => {
+                                  if (el) {
+                                    setTimeout(() => {
+                                      const loader = el.parentElement?.querySelector('.iframe-loader');
+                                      if (loader) loader.classList.add('opacity-0');
+                                    }, 2500);
+                                  }
+                                }}
                               />
                             </>
                           ) : (
                             <div className="w-full flex flex-col items-center justify-center text-center p-8">
-                              <AlertTriangle className="w-12 h-12 text-red-500 mb-4" />
-                              <p className="text-white text-lg font-bold">Certificate link unavailable</p>
-                              <p className="text-neutral-400 text-sm mt-2">Security mismatch detected between stored ID and generated preview URL.</p>
+                              <AlertTriangle className="w-12 h-12 text-amber-500 mb-4 opacity-80" />
+                              <p className="text-white text-lg font-bold">Certificate preview unavailable</p>
+                              <p className="text-neutral-400 text-sm mt-2">The verified record exists. Use the direct download or Google Drive link below to view.</p>
                             </div>
-                          )
-                        ) : (
-                          <div className="w-full flex flex-col items-center justify-center text-center p-8">
-                            <AlertTriangle className="w-12 h-12 text-amber-500 mb-4 opacity-80" />
-                            <p className="text-white text-lg font-bold">Certificate not available</p>
-                            <p className="text-neutral-400 text-sm mt-2">The verified student record exists, but the document link is missing or invalid in our registry.</p>
-                          </div>
-                        )}
+                          );
+                        })()}
                       </div>
                     </div>
 
                     {/* Action Bar */}
-                    <div className="flex flex-wrap gap-3 justify-between items-center">
+                    <div className="flex flex-col sm:flex-row gap-3 justify-between items-stretch sm:items-center">
                       <button
                         onClick={() => {
                           setRetrievedCert(null);
@@ -959,21 +963,34 @@ export default function Internship() {
                           setActiveChallenge('');
                           setCertError('');
                         }}
-                        className="px-5 py-2.5 rounded-xl text-xs font-semibold text-neutral-400 hover:text-white transition-all bg-neutral-800 border border-white/5"
+                        className="w-full sm:w-auto px-5 py-3 rounded-xl text-xs font-semibold text-neutral-400 hover:text-white transition-all bg-neutral-800 border border-white/5 text-center"
                       >
-                        Close Preview
+                        Verify Another Certificate
                       </button>
-                      {retrievedCert.driveFileId && (
-                        <a
-                          href={`https://drive.google.com/file/d/${retrievedCert.driveFileId}/view?usp=sharing`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="px-5 py-2.5 rounded-xl text-xs font-semibold text-neutral-950 bg-brand-cyan hover:bg-brand-cyan/90 transition-all flex items-center gap-2"
-                        >
-                          <Award className="w-4 h-4" />
-                          Open in Google Drive
-                        </a>
-                      )}
+                      <div className="flex flex-col sm:flex-row gap-2.5 w-full sm:w-auto">
+                        {retrievedCert.certToken && (
+                          <a
+                            href={`${API_BASE_URL}/api/certificate/${retrievedCert.certToken}?download=true`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="w-full sm:w-auto px-5 py-3 rounded-xl text-xs font-semibold text-neutral-950 bg-white hover:bg-neutral-100 transition-all flex items-center justify-center gap-2"
+                          >
+                            <UploadCloud className="w-4 h-4 rotate-180" />
+                            Download Certificate
+                          </a>
+                        )}
+                        {retrievedCert.driveFileId && (
+                          <a
+                            href={`https://drive.google.com/file/d/${retrievedCert.driveFileId}/view?usp=sharing`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="w-full sm:w-auto px-5 py-3 rounded-xl text-xs font-semibold text-neutral-950 bg-brand-cyan hover:bg-brand-cyan/90 transition-all flex items-center justify-center gap-2"
+                          >
+                            <Award className="w-4 h-4" />
+                            Open in Google Drive
+                          </a>
+                        )}
+                      </div>
                     </div>
 
                     {/* Verification Metadata */}
@@ -983,8 +1000,8 @@ export default function Internship() {
                     </div>
                   </div>
                 </motion.div>
-              )}
-            </AnimatePresence>
+              </AnimatePresence>
+            )}
           </div>
         )}
 
