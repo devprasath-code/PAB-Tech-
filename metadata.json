@@ -1,0 +1,6 @@
+{
+  "name": "PAB TECH",
+  "description": "High-fidelity engineering studio building the infrastructure of the digital future through AI, IoT, and premium software solutions.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
