@@ -10,7 +10,6 @@ import compression from 'compression';
 import rateLimit from 'express-rate-limit';
 import { normalizeDriveId, validateDriveId, buildDrivePreviewURL } from './src/utils/drive';
 import { z } from 'zod';
-import { createServer as createViteServer } from 'vite';
 import { google } from 'googleapis';
 
 const certTokens = new Map<string, { fileId: string, expiresAt: number }>();
@@ -780,6 +779,7 @@ Received: ${new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' })} IS
 
   if (process.env.NODE_ENV !== 'production') {
     console.log('[Dev] Starting Vite in middleware mode...');
+    const { createServer: createViteServer } = await import('vite');
     const vite = await createViteServer({
       server: { middlewareMode: true },
       appType: 'spa',
