@@ -1,4 +1,5 @@
 import express, { Request, Response, NextFunction } from 'express';
+import { Resend } from 'resend';
 import nodemailer from 'nodemailer';
 import path from 'path';
 import * as fs from 'fs';
@@ -73,7 +74,11 @@ app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
 // 1. CORS
 app.use(cors({
-  origin: true, // Allow all origins for the development/preview environment
+  origin: [
+    'https://pabtech.vercel.app',
+    'https://pabtech.vercel.app/',
+    'http://localhost:5173'
+  ],
   credentials: true
 }));
 
@@ -642,16 +647,9 @@ async function startServer() {
   // Load and decrypt database
   loadAndDecryptDatabase();
 
-  // Email transporter (use environment variables for credentials)
-  const emailTransporter = nodemailer.createTransport({
-    host: process.env.EMAIL_HOST || 'smtp.gmail.com',
-    port: Number(process.env.EMAIL_PORT) || 587,
-    secure: false,
-    auth: {
-      user: process.env.EMAIL_USER,
-      pass: process.env.EMAIL_PASS,
-    },
-  });
+  // Initialize Resend API client
+  const resend = new Resend(process.env.RESEND_API_KEY);
+  const emailFromAddress = process.env.RESEND_FROM_EMAIL || 'PAB Tech <onboarding@resend.dev>';
 
 
   // Internship application email endpoint
@@ -659,18 +657,24 @@ async function startServer() {
     try {
       const data = req.body;
 
-      // Extract attachments if present
+      // Extract attachments if present (Resend expects base64 or buffer content)
       const attachments = [];
       if (data.photo && data.photo.data) {
+        const base64Data = data.photo.data.includes(',') 
+          ? data.photo.data.split(',')[1] 
+          : data.photo.data;
         attachments.push({
           filename: data.photo.name || 'photo.png',
-          path: data.photo.data
+          content: Buffer.from(base64Data, 'base64'),
         });
       }
       if (data.resume && data.resume.data) {
+        const base64Data = data.resume.data.includes(',') 
+          ? data.resume.data.split(',')[1] 
+          : data.resume.data;
         attachments.push({
           filename: data.resume.name || 'resume.pdf',
-          path: data.resume.data
+          content: Buffer.from(base64Data, 'base64'),
         });
       }
 
@@ -716,18 +720,17 @@ ${data.whyJoin || 'N/A'}
 Submitted: ${new Date().toLocaleString()} (Local Server Time)
       `;
 
-      const mailOptions = {
-        from: process.env.EMAIL_USER || 'no-reply@pabtech.in',
-        to: 'info@pabtech.in',
+      await resend.emails.send({
+        from: emailFromAddress,
+        to: ['info@pabtech.in'],
         subject: `New Internship Application - ${data.name || 'Applicant'} [GCT/Autonomous]`,
         text: emailContent,
-        attachments
-      };
+        attachments: attachments.length > 0 ? attachments : undefined,
+      });
 
-      await emailTransporter.sendMail(mailOptions);
       res.json({ success: true, message: 'Application emailed successfully.' });
     } catch (err) {
-      console.error('[Email send error]', err);
+      console.error('[Resend Internship error]', err);
       res.status(500).json({ success: false, message: 'Failed to send email.' });
     }
   });
@@ -759,19 +762,18 @@ ${message}
 Received: ${new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' })} IST
       `;
 
-      const mailOptions = {
-        from: process.env.EMAIL_USER || 'no-reply@pabtech.in',
-        to: 'support@pabtech.in',
+      await resend.emails.send({
+        from: emailFromAddress,
+        to: ['support@pabtech.in'],
         replyTo: email,
         subject: `[PAB Web] ${subject} — from ${name}`,
         text: emailContent,
-      };
+      });
 
-      await emailTransporter.sendMail(mailOptions);
-      console.log(`[Contact] Message from ${name} <${email}> forwarded to support@pabtech.in`);
+      console.log(`[Contact] Message from ${name} <${email}> sent via Resend to support@pabtech.in`);
       res.json({ success: true, message: 'Message sent successfully.' });
     } catch (err) {
-      console.error('[Contact email error]', err);
+      console.error('[Resend Contact error]', err);
       res.status(500).json({ success: false, message: 'Failed to send message. Please try again.' });
     }
   });
